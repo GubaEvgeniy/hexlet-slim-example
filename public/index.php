@@ -15,7 +15,7 @@ $app->get('/', function ($request, $response) {
     return $response->write('Welcome to Slim!');
 });
 /**
- *  Обработчик запросов
+ *  Request handler
  */
 $domains = [];
 for ($i = 0; $i < 10; $i++) {
@@ -33,5 +33,17 @@ $app->get('/domains', function ($request, $response) use ($domains) {
     return $response->write(json_encode($domains));
 });
 
+/**
+ * HTTP session
+ */
+$app->get('/companies', function ($request, $response) use ($companies) {
+
+    $page = $request->getQueryParam('page', 1);
+    $per = $request->getQueryParam('per', 5);
+
+    $company_per_page = array_slice($companies, $per * ($page - 1), $per);
+
+    return $response->write(json_encode($company_per_page));
+});
 
 $app->run();
