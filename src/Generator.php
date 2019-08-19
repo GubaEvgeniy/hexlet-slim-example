@@ -2,6 +2,8 @@
 
 namespace App;
 
+use Faker\Factory;
+
 class Generator
 {
     public static function generate($count)
@@ -9,7 +11,7 @@ class Generator
         $numbers = range(1, 100);
         shuffle($numbers);
 
-        $faker = \Faker\Factory::create();
+        $faker = Factory::create();
         $faker->seed(1);
         $companies = [];
         for ($i = 0; $i < $count; $i++) {
