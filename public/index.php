@@ -1,5 +1,6 @@
 <?php
 
+use function Stringy\create as s;
 use Slim\Factory\AppFactory;
 use DI\Container;
 use Slim\Views\PhpRenderer;
@@ -28,11 +29,23 @@ $app->get('/', function ($request, $response, $args) {
 });
 
 $app->get('/users', function ($request, $response) use ($users) {
-    $params = [
-        'users' => $users
+
+    $term = $request->getQueryParam('term');
+
+    if (!$term) {
+        $userResult = $users;
+    } else {
+        $userResult = array_filter($users, function ($user) use ($term) {
+            return s($user['firstName'])->contains($term, false);
+        });
+    }
+
+    $args = [
+        'users' => $userResult,
+        'term' => $term
     ];
 
-    return $this->get('renderer')->render($response, 'users/index.phtml', $params);
+    return $this->get('renderer')->render($response, 'users/index.phtml', $args);
 });
 
 $app->get('/users/{id}', function ($request, $response, $args) use ($users) {
