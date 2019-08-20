@@ -1,1 +1,21 @@
-<h1>Hello, <?= $id ?></h1>
+<a href="/users">Пользователи</a>
+
+<table>
+    <thead>
+    <tr>
+        <td>id</td>
+        <td>firstName</td>
+        <td>lastName</td>
+        <td>email</td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><?=$user['id']?></td>
+        <td><?=$user['firstName']?></td>
+        <td><?=$user['lastName']?></td>
+        <td><?=$user['email']?></td>
+    </tr>
+    </tbody>
+</table>
+
