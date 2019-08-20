@@ -19,6 +19,7 @@ $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
 
 $users = App\Generator::generateUsers(100);
+$repo = new App\Repository();
 
 $app->get('/', function ($request, $response, $args) {
     $title = 'Добро пожаловать';
@@ -57,6 +58,41 @@ $app->get('/users/{id}', function ($request, $response, $args) use ($users) {
     ];
 
     return $this->get('renderer')->render($response, 'users/show.phtml', $params);
+});
+
+$app->get('/courses', function ($request, $response) use ($repo) {
+    $params = [
+        'courses' => $repo->all()
+    ];
+    return $this->get('renderer')->render($response, 'courses/index.phtml', $params);
+});
+
+$app->get('/courses/new', function ($request, $response) use ($repo) {
+    $params = [
+        'course' => [],
+        'errors' => []
+    ];
+    return $this->get('renderer')->render($response, 'courses/new.phtml', $params);
+});
+
+$app->post('/courses', function ($request, $response) use ($repo) {
+    $course = $request->getParsedBodyParam('course');
+
+    $validator = new App\Validator();
+    $errors = $validator->validate($course);
+
+    if (count($errors) === 0) {
+        $repo->save($course);
+        return $response->withHeader('Location', '/courses')
+            ->withStatus(302);
+    }
+
+    $params = [
+        'course' => $course,
+        'errors' => $errors
+    ];
+
+    return $this->get('renderer')->render($response->withStatus(422), 'courses/new.phtml', $params);
 });
 
 $app->run();
