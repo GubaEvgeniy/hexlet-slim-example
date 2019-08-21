@@ -17,9 +17,14 @@ $container->set('renderer', function () {
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
+$router = $app->getRouteCollector()->getRouteParser();
+
 
 $users = App\Generator::generateUsers(100);
+$posts = App\Generator::generatePosts(100);
+
 $repo = new App\Repository();
+
 
 $app->get('/', function ($request, $response, $args) {
     $title = 'Добро пожаловать';
@@ -94,5 +99,31 @@ $app->post('/courses', function ($request, $response) use ($repo) {
 
     return $this->get('renderer')->render($response->withStatus(422), 'courses/new.phtml', $params);
 });
+
+$app->get('/posts', function ($request, $response) use ($posts) {
+    $per = 5;
+    $page = $request->getQueryParams()['page'] ?? 1;
+    $offset = ($page - 1) * $per;
+
+    $sliceOfPosts = array_slice($posts, $offset, $per);
+    $params = [
+        'page' => $page,
+        'posts' => $sliceOfPosts
+    ];
+    return $this->get('renderer')->render($response, 'posts/index.phtml', $params);
+})->setName('posts');
+
+$app->get('/posts/{id}', function ($request, $response, array $args) use ($posts) {
+    $id = $args['id'];
+    $post = collect($posts)->firstWhere('slug', $id);
+    if (!$post) {
+        return $response->withStatus(404)->write('Page not found');
+    }
+    $params = [
+        'post' => $post,
+    ];
+    return $this->get('renderer')->render($response, 'posts/show.phtml', $params);
+})->setName('post');
+// END
 
 $app->run();

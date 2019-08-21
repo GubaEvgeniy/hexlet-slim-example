@@ -30,7 +30,7 @@ class Generator
         $range = range(1, $count - 2);
         $numbers = collect($range)->shuffle(1)->toArray();
 
-        $faker = \Faker\Factory::create();
+        $faker = Factory::create();
         $faker->seed(1234);
         $users = [];
         for ($i = 0; $i < $count - 2; $i++) {
@@ -57,5 +57,25 @@ class Generator
         ];
 
         return $users;
+    }
+
+    public static function generatePosts($count)
+    {
+        $numbers = range(1, $count);
+        shuffle($numbers);
+
+        $faker = Factory::create();
+        $faker->seed(1);
+        $posts = [];
+        for ($i = 0; $i < $count; $i++) {
+            $posts[] = [
+                'id' => $numbers[$i],
+                'name' => $faker->text(70),
+                'body' => $faker->sentence,
+                'slug' => $faker->slug
+            ];
+        }
+
+        return $posts;
     }
 }
