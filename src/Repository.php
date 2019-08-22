@@ -30,4 +30,16 @@ final class Repository
         $item['id'] = uniqid();
         $_SESSION[$item['id']] = $item;
     }
+
+    public function savePost(array $item)
+    {
+        if (empty($item['name']) || empty($item['body'])) {
+            $json = json_encode($item);
+            throw new \Exception("Wrong data: {$json}");
+        }
+        if (!isset($item['id'])) {
+            $item['id'] = uniqid();
+        }
+        $_SESSION['posts'][$item['id']] = $item;
+    }
 }

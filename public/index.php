@@ -1,5 +1,6 @@
 <?php
 
+use Slim\Flash\Messages;
 use function Stringy\create as s;
 use Slim\Factory\AppFactory;
 use DI\Container;
@@ -13,6 +14,10 @@ $container->set('renderer', function () {
     // Параметром передается базовая директория в которой будут храниться шаблоны
     return new PhpRenderer(__DIR__ . '/../templates');
 });
+$container->set('flash', function () {
+    return new Messages();
+});
+
 
 AppFactory::setContainer($container);
 $app = AppFactory::create();
@@ -100,22 +105,70 @@ $app->post('/courses', function ($request, $response) use ($repo) {
     return $this->get('renderer')->render($response->withStatus(422), 'courses/new.phtml', $params);
 });
 
-$app->get('/posts', function ($request, $response) use ($posts) {
+/**
+ * CREATE POSTS
+ */
+$app->get('/posts/new', function ($request, $response) {
+    $params = [
+        'postsData' => [],
+        'errors' => []
+    ];
+    return $this->get('renderer')->render($response, 'posts/new.phtml', $params);
+})->setName('newPosts');
+
+$app->post('/posts', function ($request, $response) use ($router, $repo) {
+    // Извлекаем данные формы
+    $postsData = $request->getParsedBodyParam('post');
+
+    $validator = new App\Validator();
+    // Проверяем корректность данных
+    $errors = $validator->validate($postsData);
+
+    if (count($errors) === 0) {
+        // Если данные корректны, то сохраняем, добавляем флеш и выполняем редирект
+        $repo->savePost($postsData);
+        $this->get('flash')->addMessage('success', 'Post has been created');
+        // Обратите внимание на использование именованного роутинга
+        $url = $router->urlFor('posts');
+
+        return $response->withRedirect($url);
+    }
+
+    $params = [
+        'postsData' => $postsData,
+        'errors' => $errors
+    ];
+
+    // Если возникли ошибки, то устанавливаем код ответа в 422 и рендерим форму с указанием ошибок
+    $response = $response->withStatus(422);
+    return $this->get('renderer')->render($response, 'posts/new.phtml', $params);
+});
+
+/**
+ * READ POSTS
+ */
+
+$app->get('/posts', function ($request, $response) use ($repo) {
+    $flash = $this->get('flash')->getMessages();
+
+
+
     $per = 5;
     $page = $request->getQueryParams()['page'] ?? 1;
     $offset = ($page - 1) * $per;
 
-    $sliceOfPosts = array_slice($posts, $offset, $per);
+    $sliceOfPosts = array_slice($repo->all()[0], $offset, $per);
     $params = [
+        'flash' => $flash,
         'page' => $page,
         'posts' => $sliceOfPosts
     ];
     return $this->get('renderer')->render($response, 'posts/index.phtml', $params);
 })->setName('posts');
 
-$app->get('/posts/{id}', function ($request, $response, array $args) use ($posts) {
+$app->get('/posts/{id}', function ($request, $response, array $args) use ($repo) {
     $id = $args['id'];
-    $post = collect($posts)->firstWhere('slug', $id);
+    $post = collect($repo)->firstWhere('slug', $id);
     if (!$post) {
         return $response->withStatus(404)->write('Page not found');
     }
@@ -124,6 +177,9 @@ $app->get('/posts/{id}', function ($request, $response, array $args) use ($posts
     ];
     return $this->get('renderer')->render($response, 'posts/show.phtml', $params);
 })->setName('post');
-// END
+
+
+
+
 
 $app->run();
