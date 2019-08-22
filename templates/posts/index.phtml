@@ -11,11 +11,18 @@
 
 <a href="/posts/new">Новый пост</a>
 
+<pre>
+    <?php
+    // var_dump($posts);
+    ?>
+</pre>
 
 <?php foreach ($posts as $post) : ?>
     <div>
-        <a href="/posts/<?= $post['slug'] ?>"><?= htmlspecialchars($post['name']) ?></a>
+        <a href="/posts/<?= $post['id'] ?>"><?= htmlspecialchars($post['name']) ?></a>
+        <a href="/posts/<?= $post['id'] ?>/edit">изменить</a>
     </div>
+    <hr>
 <?php endforeach ?>
 
 <br>

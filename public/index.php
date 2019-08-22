@@ -5,6 +5,7 @@ use function Stringy\create as s;
 use Slim\Factory\AppFactory;
 use DI\Container;
 use Slim\Views\PhpRenderer;
+use Slim\Middleware\MethodOverrideMiddleware;
 
 // Подключение автозагрузки через composer
 require __DIR__ . '/../vendor/autoload.php';
@@ -22,6 +23,7 @@ $container->set('flash', function () {
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 $app->addErrorMiddleware(true, true, true);
+$app->add(MethodOverrideMiddleware::class);
 $router = $app->getRouteCollector()->getRouteParser();
 
 
@@ -151,8 +153,6 @@ $app->post('/posts', function ($request, $response) use ($router, $repo) {
 $app->get('/posts', function ($request, $response) use ($repo) {
     $flash = $this->get('flash')->getMessages();
 
-
-
     $per = 5;
     $page = $request->getQueryParams()['page'] ?? 1;
     $offset = ($page - 1) * $per;
@@ -168,7 +168,8 @@ $app->get('/posts', function ($request, $response) use ($repo) {
 
 $app->get('/posts/{id}', function ($request, $response, array $args) use ($repo) {
     $id = $args['id'];
-    $post = collect($repo)->firstWhere('slug', $id);
+    $post = collect($repo->allPosts())->firstWhere('id', $id);
+
     if (!$post) {
         return $response->withStatus(404)->write('Page not found');
     }
@@ -178,8 +179,47 @@ $app->get('/posts/{id}', function ($request, $response, array $args) use ($repo)
     return $this->get('renderer')->render($response, 'posts/show.phtml', $params);
 })->setName('post');
 
+/**
+ * Update POSTS
+ */
+$app->get('/posts/{id}/edit', function ($request, $response, array $args) use ($repo) {
 
+    echo '<pre>';
+    var_dump($_SESSION['posts']['5d5e8055ca03c']);
+    var_dump($args['id']);
 
+    $post = $repo->findPosts($args['id']);
+    $params = [
+        'post' => $post,
+        'postData' => $post
+    ];
+    return $this->get('renderer')->render($response, 'posts/edit.phtml', $params);
+
+});
+
+$app->patch('/posts/{id}', function ($request, $response, array $args) use ($repo, $router) {
+    $post = $repo->findPosts($args['id']);
+    $postData = $request->getParsedBodyParam('post');
+
+    $validator = new App\Validator();
+    $errors = $validator->validate($postData);
+
+    if (count($errors) === 0) {
+        $post['name'] = $postData['name'];
+        $post['body'] = $postData['body'];
+        $repo->savePost($post);
+        $this->get('flash')->addMessage('success', 'Post has been updated');
+        return $response->withRedirect($router->urlFor('posts'));
+    }
+
+    $params = [
+        'post' => $post,
+        'postData' => $postData,
+        'errors' => $errors
+    ];
+
+    return $this->get('renderer')->render($response->withStatus(422), 'posts/edit.phtml', $params);
+});
 
 
 $app->run();
