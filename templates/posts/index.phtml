@@ -21,6 +21,12 @@
     <div>
         <a href="/posts/<?= $post['id'] ?>"><?= htmlspecialchars($post['name']) ?></a>
         <a href="/posts/<?= $post['id'] ?>/edit">изменить</a>
+
+        <form action="/posts/<?= $post['id'] ?>" method="post" style="display: inline-block">
+            <input type="hidden" name="_METHOD" value="DELETE">
+            <input type="submit" value="Удалить">
+        </form>
+
     </div>
     <hr>
 <?php endforeach ?>

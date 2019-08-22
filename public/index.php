@@ -221,5 +221,15 @@ $app->patch('/posts/{id}', function ($request, $response, array $args) use ($rep
     return $this->get('renderer')->render($response->withStatus(422), 'posts/edit.phtml', $params);
 });
 
+/**
+ *  Delete Posts
+ */
+$app->delete('/posts/{id}', function ($request, $response, array $args) use ($repo, $router) {
+    $id = $args['id'];
+    $repo->destroyPosts($id);
+    $this->get('flash')->addMessage('success', 'Post has been removed');
+    return $response->withRedirect($router->urlFor('posts'));
+});
+
 
 $app->run();
